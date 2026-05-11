@@ -1,8 +1,22 @@
+/* Canvas lives in its own bounded box: below the TopBar, above the StageBar,
+   and left of the InfoCard. This keeps the 3D scene visually separate from
+   the supporting text instead of having the text overlay the code. */
 .canvasWrap {
   position: absolute;
-  inset: 0;
+  top: calc(96px * var(--scale));
+  bottom: calc(140px * var(--scale));
+  left: calc(24px * var(--scale));
+  right: clamp(360px, 28vw, 480px);
   background: transparent;
   z-index: 2;
+}
+
+/* Below 900px viewport, info card moves to a bottom row instead of right column. */
+@media (max-width: 900px) {
+  .canvasWrap {
+    right: calc(24px * var(--scale));
+    bottom: calc(360px * var(--scale));
+  }
 }
 
 .canvasWrap > canvas {
