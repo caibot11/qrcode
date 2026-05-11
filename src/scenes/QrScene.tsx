@@ -8,40 +8,27 @@ import {
   type QrCategorized,
   type QrModule,
 } from '@/lib/codes/qr/categorize';
-import {
-  easeOutCubic,
-  hexToRgbNorm,
-  lerp,
-  MASK_FORMULAS,
-} from '@/lib/codes/qr/helpers';
+import { easeOutCubic, lerp, MASK_FORMULAS } from '@/lib/codes/qr/helpers';
 import { QR_STAGES } from '@/lib/codes/qr/config';
+import {
+  ACCENT_HEX,
+  ACCENT_RGB,
+  ACCENT_STRONG_RGB,
+  CREAM_RGB,
+  WARN_RGB,
+} from '@/lib/codes/accents';
 import { InstancedGrid } from '@/lib/three/InstancedGrid';
 import { CameraRig, type CameraGoal } from '@/lib/three/CameraRig';
 import { SceneEnvironment } from '@/lib/three/SceneEnvironment';
 import { StageLabels, type LabelSpec } from '@/lib/three/StageLabels';
 import { useStageAnimator } from '@/lib/three/useStageAnimator';
 
-// NOTE on stage colors: kept as legacy values for fidelity of the port. The
-// design plan calls for collapsing these onto a single accent with glow/motion
-// distinguishing stages — that swap happens once the chosen visual direction
-// lands. For now we ship the colors that already work.
-const STAGE_COLORS = ['#ff6b6b', '#6bcb77', '#9b59b6', '#ff6b6b', '#1abc9c'];
-const STAGE_RGB = STAGE_COLORS.map(hexToRgbNorm);
-
-const CHAR_COLORS: ReadonlyArray<{ r: number; g: number; b: number }> = [
-  { r: 1.0, g: 0.4, b: 0.4 },
-  { r: 0.4, g: 0.8, b: 1.0 },
-  { r: 1.0, g: 0.75, b: 0.25 },
-  { r: 0.55, g: 1.0, b: 0.55 },
-  { r: 0.85, g: 0.5, b: 1.0 },
-  { r: 1.0, g: 0.55, b: 0.2 },
-  { r: 0.3, g: 1.0, b: 0.85 },
-  { r: 1.0, g: 0.45, b: 0.7 },
-  { r: 0.7, g: 0.85, b: 0.3 },
-  { r: 0.6, g: 0.6, b: 1.0 },
-  { r: 1.0, g: 0.65, b: 0.5 },
-  { r: 0.45, g: 0.9, b: 0.65 },
-];
+// Single accent per code type. Stages are distinguished by motion, glow
+// intensity, and the auxiliary colors (cream for "decoded", warn for error-
+// correction), not by 5 unrelated hues. See plan §"Visual design".
+const QR_ACCENT = ACCENT_RGB.qr;
+const QR_ACCENT_STRONG = ACCENT_STRONG_RGB.qr;
+const QR_ACCENT_HEX = ACCENT_HEX.qr;
 
 const TRAIL_CAPACITY = 600;
 
@@ -73,11 +60,13 @@ export function QrScene({
     modulesRef.current = categorized.modules;
   }, [categorized]);
 
-  // Default camera goal scales with grid size.
+  // Default camera goal — front-facing, slight 3/4 angle for depth.
+  // The world group is rotated +90° about X (see <group> in render), so what
+  // was the "floor" plane now stands upright in front of the camera.
   const defaultGoal = useMemo<CameraGoal>(() => {
-    const dist = viz.gridSize * 1.1;
+    const dist = viz.gridSize * 2.0;
     return {
-      position: [dist * 0.7, dist * 0.9, dist * 0.7],
+      position: [dist * 0.09, dist * 0.05, dist * 0.99],
       target: [0, 0, 0],
     };
   }, [viz.gridSize]);
@@ -117,9 +106,9 @@ export function QrScene({
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setDrawRange(0, 0);
     const mat = new THREE.LineBasicMaterial({
-      color: 0x9b59b6,
+      color: QR_ACCENT_HEX,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.35,
     });
     const line = new THREE.Line(geo, mat);
     line.visible = false;
@@ -226,47 +215,52 @@ export function QrScene({
 
   return (
     <>
-      <SceneEnvironment gridSize={viz.gridSize} />
+      <SceneEnvironment />
       <CameraRig goalRef={cameraGoalRef} />
 
-      <InstancedGrid modulesRef={modulesRef} gridSize={viz.gridSize} />
-      <StageLabels labels={labels} />
+      {/* Rotate +90° about X so the grid stands up vertically facing the
+          camera. All children — modules, labels, extras — share this
+          transform so legacy XZ-plane coordinates "just work". */}
+      <group rotation={[Math.PI / 2, 0, 0]}>
+        <InstancedGrid modulesRef={modulesRef} gridSize={viz.gridSize} />
+        <StageLabels labels={labels} />
 
-      {/* Mask peel plane — visible during stage 1 */}
-      <mesh
-        ref={maskPlaneRef}
-        position={[0, 3, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        visible={false}
-      >
-        <planeGeometry args={[viz.gridSize - 2, viz.gridSize - 2]} />
-        <meshBasicMaterial
-          color={0x6bcb77}
-          transparent
-          opacity={0}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+        {/* Mask peel plane — visible during stage 1 */}
+        <mesh
+          ref={maskPlaneRef}
+          position={[0, 3, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          visible={false}
+        >
+          <planeGeometry args={[viz.gridSize - 2, viz.gridSize - 2]} />
+          <meshBasicMaterial
+            color={QR_ACCENT_HEX}
+            transparent
+            opacity={0}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
 
-      {/* Read cursor — visible during stage 2 */}
-      <mesh ref={cursorRef} visible={false}>
-        <sphereGeometry args={[0.45, 16, 16]} />
-        <meshBasicMaterial color={0x9b59b6} transparent opacity={0.9} />
-      </mesh>
+        {/* Read cursor — visible during stage 2 */}
+        <mesh ref={cursorRef} visible={false}>
+          <sphereGeometry args={[0.45, 16, 16]} />
+          <meshBasicMaterial color={QR_ACCENT_HEX} transparent opacity={0.9} />
+        </mesh>
 
-      {/* Read trail (imperative line) */}
-      <primitive object={trail.line} />
+        {/* Read trail (imperative line) */}
+        <primitive object={trail.line} />
 
-      {/* Error-correction shield — visible during stage 3 */}
-      <mesh ref={shieldRef} position={[0, 2, 0]} visible={false}>
-        <icosahedronGeometry args={[viz.gridSize * 0.4, 2]} />
-        <meshBasicMaterial
-          color={0x4d96ff}
-          transparent
-          opacity={0}
-          wireframe
-        />
-      </mesh>
+        {/* Error-correction shield — visible during stage 3 */}
+        <mesh ref={shieldRef} position={[0, 2, 0]} visible={false}>
+          <icosahedronGeometry args={[viz.gridSize * 0.4, 2]} />
+          <meshBasicMaterial
+            color={QR_ACCENT_HEX}
+            transparent
+            opacity={0}
+            wireframe
+          />
+        </mesh>
+      </group>
     </>
   );
 }
@@ -322,7 +316,8 @@ function labelsKey(labels: LabelSpec[]): string {
 function renderStage0(ctx: RenderCtx): LabelSpec[] {
   const { modules, viz, halfSize, categorized, emit } = ctx;
   const p = ctx.eased;
-  const sc = STAGE_RGB[0];
+  const sc = QR_ACCENT;
+  const cream = CREAM_RGB;
 
   const fadeIn = Math.min(1, p / 0.15);
   const finderP = Math.max(0, Math.min(1, (p - 0.15) / 0.35));
@@ -357,9 +352,9 @@ function renderStage0(ctx: RenderCtx): LabelSpec[] {
       const ep = easeOutCubic(timingP);
       m._y = ep * 1.0;
       if (m.val) {
-        m._r = lerp(m._r, 1.0, ep);
-        m._g = lerp(m._g, 0.85, ep);
-        m._b = lerp(m._b, 0.24, ep);
+        m._r = lerp(m._r, cream.r, ep);
+        m._g = lerp(m._g, cream.g, ep);
+        m._b = lerp(m._b, cream.b, ep);
       }
     }
 
@@ -367,9 +362,10 @@ function renderStage0(ctx: RenderCtx): LabelSpec[] {
       const ep = easeOutCubic(alignP);
       m._y = ep * 1.5;
       if (m.val) {
-        m._r = lerp(m._r, 1.0, ep);
-        m._g = lerp(m._g, 0.55, ep);
-        m._b = lerp(m._b, 0.2, ep);
+        // alignment uses accent-strong for differentiation
+        m._r = lerp(m._r, QR_ACCENT_STRONG.r, ep);
+        m._g = lerp(m._g, QR_ACCENT_STRONG.g, ep);
+        m._b = lerp(m._b, QR_ACCENT_STRONG.b, ep);
       }
     }
   }
@@ -408,7 +404,7 @@ function renderStage0(ctx: RenderCtx): LabelSpec[] {
 function renderStage1(ctx: RenderCtx): LabelSpec[] {
   const { modules, viz, halfSize, categorized, extras, emit } = ctx;
   const p = ctx.eased;
-  const sc = STAGE_RGB[1];
+  const sc = QR_ACCENT;
 
   const formatP = Math.min(1, p / 0.3);
   const maskAppearP = Math.max(0, Math.min(1, (p - 0.3) / 0.2));
@@ -490,7 +486,7 @@ function renderStage1(ctx: RenderCtx): LabelSpec[] {
 function renderStage2(ctx: RenderCtx): LabelSpec[] {
   const { modules, categorized, halfSize, extras, cameraGoalRef, defaultGoal, emit } = ctx;
   const p = ctx.eased;
-  const sc = STAGE_RGB[2];
+  const sc = QR_ACCENT;
 
   const readP = Math.max(0, Math.min(1, p / 0.9));
   const pullbackP = Math.max(0, Math.min(1, (p - 0.9) / 0.1));
@@ -620,8 +616,8 @@ function renderStage3(ctx: RenderCtx): LabelSpec[] {
   const damageP = Math.max(0, Math.min(1, (p - 0.5) / 0.35));
   const returnP = Math.max(0, Math.min(1, (p - 0.85) / 0.15));
 
-  const dataColor = { r: 0.3, g: 0.59, b: 1.0 };
-  const ecColor = { r: 1.0, g: 0.42, b: 0.42 };
+  const dataColor = QR_ACCENT;
+  const ecColor = WARN_RGB;
   let damagedCount = 0;
   let repairedCount = 0;
 
@@ -763,8 +759,9 @@ function renderStage4(ctx: RenderCtx): LabelSpec[] {
       char,
     });
 
-    const cc = CHAR_COLORS[i % CHAR_COLORS.length];
     const isCurrent = i === currentCharIdx && revealP < 1;
+    // current char glows in accent (pulses); already-decoded chars settle to cream.
+    const cc = isCurrent ? QR_ACCENT : CREAM_RGB;
     const pulse = isCurrent ? 0.8 + 0.2 * Math.sin(performance.now() * 0.008) : 1.0;
     const startBit = i * 8;
     let cx = 0;

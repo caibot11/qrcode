@@ -16,11 +16,21 @@ export function VisualizerCanvas() {
 
   const qrViz = liveViz?.kind === 'qr' ? liveViz : DEMO_QR;
 
+  // Camera distance scales with grid size; the scene is face-on now so the
+  // camera lives mostly along Z. A tiny x/y offset gives subtle 3/4 depth
+  // without distorting the code with strong perspective.
+  const dist = qrViz.gridSize * 2.0;
+
   return (
     <div className={styles.canvasWrap}>
       <Canvas
-        camera={{ fov: 50, near: 0.1, far: 500, position: [20, 22, 20] }}
-        gl={{ antialias: true, alpha: false }}
+        camera={{
+          fov: 34,
+          near: 0.1,
+          far: 500,
+          position: [dist * 0.09, dist * 0.05, dist * 0.99],
+        }}
+        gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
       >
         <Suspense fallback={null}>
@@ -33,17 +43,19 @@ export function VisualizerCanvas() {
             />
           )}
         </Suspense>
+        {/* Face-on orbit: kid can tilt slightly to see depth, can't go round the back. */}
         <OrbitControls
           makeDefault
           enableDamping
-          dampingFactor={0.08}
-          autoRotate
-          autoRotateSpeed={0.35}
-          minDistance={qrViz.gridSize * 0.4}
-          maxDistance={qrViz.gridSize * 3.5}
-          minPolarAngle={Math.PI * 0.05}
-          maxPolarAngle={Math.PI * 0.85}
-          screenSpacePanning
+          dampingFactor={0.1}
+          enablePan={false}
+          enableZoom={false}
+          minDistance={qrViz.gridSize * 0.9}
+          maxDistance={qrViz.gridSize * 2.5}
+          minPolarAngle={Math.PI * 0.34}
+          maxPolarAngle={Math.PI * 0.66}
+          minAzimuthAngle={-Math.PI * 0.18}
+          maxAzimuthAngle={Math.PI * 0.18}
         />
       </Canvas>
     </div>

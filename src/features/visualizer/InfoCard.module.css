@@ -1,60 +1,120 @@
 .card {
   position: absolute;
-  top: calc(90px * var(--scale));
-  right: calc(24px * var(--scale));
-  width: clamp(280px, 22vw, 380px);
+  top: calc(110px * var(--scale));
+  right: calc(40px * var(--scale));
+  bottom: calc(220px * var(--scale));
+  width: clamp(320px, 24vw, 420px);
   background: var(--panel);
-  border: 1px solid var(--panel-border);
+  border: 1px solid var(--hairline);
   backdrop-filter: blur(var(--panel-blur));
   border-radius: var(--radius-lg);
-  padding: calc(20px * var(--scale));
+  padding: calc(30px * var(--scale)) calc(30px * var(--scale));
   z-index: 15;
   display: flex;
   flex-direction: column;
-  gap: calc(8px * var(--scale));
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  transition: border-color 320ms ease, box-shadow 320ms ease;
 }
 
-.stageNum {
+.stageBadge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: calc(6px * var(--scale)) calc(12px * var(--scale));
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-family: var(--font-mono);
   font-size: calc(11px * var(--scale));
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent-strong);
+  letter-spacing: 0.16em;
+  color: var(--accent);
 }
 
 .title {
-  font-size: calc(22px * var(--scale));
-  font-weight: 800;
-  margin: 0;
+  margin: calc(16px * var(--scale)) 0 0;
+  font-family: var(--font-display);
+  font-size: calc(40px * var(--scale));
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
   color: var(--fg-0);
-  letter-spacing: -0.01em;
+}
+
+.hairline {
+  margin: calc(20px * var(--scale)) 0;
+  height: 1px;
+  background: var(--hairline);
 }
 
 .short {
-  font-size: calc(14px * var(--scale));
+  font-family: var(--font-display);
+  font-size: calc(17px * var(--scale));
   line-height: 1.5;
   color: var(--fg-1);
   margin: 0;
+  font-weight: 400;
+}
+
+.spacer {
+  flex: 1;
+  min-height: calc(8px * var(--scale));
+}
+
+.factCard {
+  padding: calc(20px * var(--scale));
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--accent-soft), rgba(245, 176, 77, 0.02));
+  border: 1px solid var(--accent-border);
+  margin-bottom: calc(18px * var(--scale));
+}
+
+.factHeader {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--scale));
+  margin-bottom: calc(10px * var(--scale));
+  font-family: var(--font-display);
+  font-size: calc(12px * var(--scale));
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+}
+
+.factBulb {
+  width: calc(28px * var(--scale));
+  height: calc(28px * var(--scale));
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  display: grid;
+  place-items: center;
+}
+
+.factBody {
+  font-family: var(--font-display);
+  font-size: calc(15px * var(--scale));
+  line-height: 1.45;
+  color: var(--fg-0);
+  font-weight: 500;
 }
 
 .decoded {
-  margin-top: calc(8px * var(--scale));
-  padding-top: calc(12px * var(--scale));
-  border-top: 1px solid var(--panel-border);
+  padding-top: calc(16px * var(--scale));
+  border-top: 1px solid var(--hairline);
 }
 
 .decodedLabel {
+  font-family: var(--font-mono);
   font-size: calc(11px * var(--scale));
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.16em;
   color: var(--fg-2);
-  margin-bottom: calc(4px * var(--scale));
+  margin-bottom: calc(6px * var(--scale));
 }
 
 .decodedValue {
   font-family: var(--font-mono);
-  font-size: calc(15px * var(--scale));
-  color: var(--accent-strong);
+  font-size: calc(17px * var(--scale));
+  font-weight: 700;
+  color: var(--accent);
   word-break: break-all;
 }

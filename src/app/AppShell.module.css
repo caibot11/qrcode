@@ -3,4 +3,24 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background: radial-gradient(
+    ellipse at 30% 20%,
+    var(--bg-1) 0%,
+    var(--bg-0) 60%
+  );
+}
+
+/* subtle accent-tinted glow in the top-right corner */
+.warmGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    ellipse at 85% 15%,
+    var(--accent-soft) 0%,
+    transparent 50%
+  );
+  opacity: 0.5;
+  transition: background 480ms ease;
 }

@@ -1,7 +1,8 @@
 .canvasWrap {
   position: absolute;
   inset: 0;
-  background: var(--bg-0);
+  background: transparent;
+  z-index: 2;
 }
 
 .canvasWrap > canvas {

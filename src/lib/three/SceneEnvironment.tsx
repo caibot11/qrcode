@@ -1,34 +1,33 @@
-import * as THREE from 'three';
 import { useMemo } from 'react';
+import * as THREE from 'three';
 
 interface Props {
-  gridSize: number;
+  /** background tint hex string, e.g. '#171008' */
+  background?: string;
+  fogDensity?: number;
 }
 
 /**
- * Lights + ground plane + fog — extracted from legacy BaseVisualizer._setupScene.
+ * Lights + atmosphere for a front-facing kiosk scene. No floor plane —
+ * the code hangs in space like a museum exhibit lit from the front.
  */
-export function SceneEnvironment({ gridSize }: Props) {
-  const fogColor = useMemo(() => new THREE.Color(0x0a0e1a), []);
+export function SceneEnvironment({
+  background = '#171008',
+  fogDensity = 0.004,
+}: Props) {
+  const fogColor = useMemo(() => new THREE.Color(background), [background]);
 
   return (
     <>
-      <fogExp2 attach="fog" args={[fogColor, 0.006]} />
-      <color attach="background" args={['#0a0e1a']} />
+      <fogExp2 attach="fog" args={[fogColor, fogDensity]} />
 
-      <ambientLight color={0x404060} intensity={1.2} />
-      <directionalLight position={[10, 20, 10]} intensity={1.5} color={0xffffff} />
-      <directionalLight position={[-10, 10, -10]} intensity={0.4} color={0x4488ff} />
-
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]}>
-        <planeGeometry args={[gridSize * 2 + 10, gridSize * 2 + 10]} />
-        <meshStandardMaterial
-          color={0x0d1117}
-          transparent
-          opacity={0.6}
-          roughness={1}
-        />
-      </mesh>
+      <ambientLight color={0x6a5236} intensity={1.0} />
+      {/* Key — warm light from upper-left front */}
+      <directionalLight position={[-6, 8, 12]} intensity={1.6} color={'#fff0d6'} />
+      {/* Fill — cooler bounce from below-right */}
+      <directionalLight position={[8, -4, 6]} intensity={0.35} color={'#7ab8ff'} />
+      {/* Rim — cool from behind to separate code from background */}
+      <directionalLight position={[0, 0, -10]} intensity={0.5} color={'#a8b8d4'} />
     </>
   );
 }

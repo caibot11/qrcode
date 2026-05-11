@@ -14,8 +14,13 @@ export function TopBar() {
   return (
     <header className={styles.topbar}>
       <div className={styles.brand}>
-        <span className={styles.brandTitle}>{t('app.title')}</span>
-        <span className={styles.brandSub}>{t('app.subtitle')}</span>
+        <div className={styles.brandMark} aria-hidden>
+          <div className={styles.brandMarkInner} />
+        </div>
+        <div className={styles.brandText}>
+          <span className={styles.brandTitle}>{t('app.title')}</span>
+          <span className={styles.brandSub}>{t('app.subtitle')}</span>
+        </div>
       </div>
 
       <nav className={styles.codeTypes} aria-label="Code type">
@@ -35,6 +40,10 @@ export function TopBar() {
 
       <div className={styles.actions}>
         <LangToggle />
+        <div className={styles.cameraPill} role="status">
+          <span className={styles.cameraDot} aria-hidden />
+          LIVE
+        </div>
       </div>
     </header>
   );
