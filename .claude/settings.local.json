@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.thonky.com)",
+      "WebFetch(domain:www.jsdocs.io)",
+      "Bash(git -C \"C:\\\\Users\\\\marek\\\\GIT\\\\nerdz\" diff --stat)",
+      "Bash(dir:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:cdn.jsdelivr.net)"
+    ]
+  }
+}
