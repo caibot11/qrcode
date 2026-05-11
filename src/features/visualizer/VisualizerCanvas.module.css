@@ -1,0 +1,12 @@
+.canvasWrap {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-0);
+}
+
+.canvasWrap > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}

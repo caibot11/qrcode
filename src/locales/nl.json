@@ -1,0 +1,33 @@
+{
+  "app.title": "nerdz",
+  "app.subtitle": "Decoderen als een robot.",
+
+  "codeType.qr": "QR-code",
+  "codeType.barcode": "Streepjescode",
+  "codeType.datamatrix": "Data Matrix",
+  "codeType.aztec": "Aztec",
+
+  "controls.play": "Speel af",
+  "controls.pause": "Pauze",
+  "controls.prev": "Vorige stap",
+  "controls.next": "Volgende stap",
+  "controls.scanAgain": "Opnieuw scannen",
+  "controls.trySample": "Probeer een voorbeeld",
+  "controls.makeYourOwn": "Maak je eigen code",
+
+  "stage.qr.0.title": "Opbouw",
+  "stage.qr.0.short": "Elke QR-code heeft drie grote vierkanten in de hoeken en stippeltjes ertussen. Daarmee vindt de scanner de code, ook scheef.",
+  "stage.qr.1.title": "Formaat & Masker",
+  "stage.qr.1.short": "Eerst leest de scanner het formaat. Dan haalt hij een patroon weg om de echte data eronder te onthullen.",
+  "stage.qr.2.title": "Data lezen",
+  "stage.qr.2.short": "Een lezer zigzagt door de code en pikt de zwart-witte hokjes op als een lange reeks enen en nullen.",
+  "stage.qr.3.title": "Foutcorrectie",
+  "stage.qr.3.short": "Extra reparatie-bits zorgen dat de code blijft werken, zelfs als er iets vies of beschadigd is.",
+  "stage.qr.4.title": "Decoderen",
+  "stage.qr.4.short": "Elke 8 bits worden samen een letter. Kijk hoe de geheime boodschap tevoorschijn komt!",
+
+  "attract.cta": "Scan jouw code!",
+  "scan.status.idle": "Laat een code aan de camera zien",
+  "scan.status.scanning": "Aan het kijken…",
+  "scan.status.decoded": "Gevonden!"
+}

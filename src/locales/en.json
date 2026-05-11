@@ -1,0 +1,33 @@
+{
+  "app.title": "nerdz",
+  "app.subtitle": "Decode like a robot.",
+
+  "codeType.qr": "QR Code",
+  "codeType.barcode": "Barcode",
+  "codeType.datamatrix": "Data Matrix",
+  "codeType.aztec": "Aztec",
+
+  "controls.play": "Play",
+  "controls.pause": "Pause",
+  "controls.prev": "Previous step",
+  "controls.next": "Next step",
+  "controls.scanAgain": "Scan again",
+  "controls.trySample": "Try a sample",
+  "controls.makeYourOwn": "Make your own",
+
+  "stage.qr.0.title": "Structure",
+  "stage.qr.0.short": "Every QR code has three big corner squares and timing strips. Those help the scanner find the code from any angle.",
+  "stage.qr.1.title": "Format & Mask",
+  "stage.qr.1.short": "First the format bits are read, then a pattern is peeled away to reveal the real data hiding underneath.",
+  "stage.qr.2.title": "Data Reading",
+  "stage.qr.2.short": "A reader zig-zags across the code, collecting black-and-white squares into a long string of 1s and 0s.",
+  "stage.qr.3.title": "Error Correction",
+  "stage.qr.3.short": "Extra repair bits let the code work even when part of it is dirty or damaged.",
+  "stage.qr.4.title": "Final Decode",
+  "stage.qr.4.short": "Each 8 bits become a letter. Watch the hidden message appear!",
+
+  "attract.cta": "Scan your code!",
+  "scan.status.idle": "Show a code to the camera",
+  "scan.status.scanning": "Looking…",
+  "scan.status.decoded": "Got it!"
+}

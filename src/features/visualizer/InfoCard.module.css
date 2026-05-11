@@ -1,0 +1,60 @@
+.card {
+  position: absolute;
+  top: calc(90px * var(--scale));
+  right: calc(24px * var(--scale));
+  width: clamp(280px, 22vw, 380px);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(var(--panel-blur));
+  border-radius: var(--radius-lg);
+  padding: calc(20px * var(--scale));
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--scale));
+}
+
+.stageNum {
+  font-size: calc(11px * var(--scale));
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.title {
+  font-size: calc(22px * var(--scale));
+  font-weight: 800;
+  margin: 0;
+  color: var(--fg-0);
+  letter-spacing: -0.01em;
+}
+
+.short {
+  font-size: calc(14px * var(--scale));
+  line-height: 1.5;
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.decoded {
+  margin-top: calc(8px * var(--scale));
+  padding-top: calc(12px * var(--scale));
+  border-top: 1px solid var(--panel-border);
+}
+
+.decodedLabel {
+  font-size: calc(11px * var(--scale));
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  margin-bottom: calc(4px * var(--scale));
+}
+
+.decodedValue {
+  font-family: var(--font-mono);
+  font-size: calc(15px * var(--scale));
+  color: var(--accent-strong);
+  word-break: break-all;
+}

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Decoder - 3D Visualizer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- Left Info Card -->
+  <div id="info-card">
+    <div id="card-header">
+      <h1 id="card-title">Code Decoder</h1>
+
+      <!-- Code Type Selector -->
+      <div id="code-type-selector">
+        <button class="code-type-btn active" data-type="qr">QR Code</button>
+        <button class="code-type-btn" data-type="barcode">Barcode</button>
+        <button class="code-type-btn" data-type="datamatrix">Data Matrix</button>
+        <button class="code-type-btn" data-type="aztec">Aztec</button>
+      </div>
+
+      <div id="step-progress"></div>
+    </div>
+
+    <div id="card-stage">
+      <div id="stage-indicator">
+        <span id="stage-dot"></span>
+        <span id="stage-label">Stage 1 of 5</span>
+      </div>
+      <h2 id="step-title"></h2>
+      <p id="step-description"></p>
+    </div>
+
+    <div id="card-detail">
+      <p id="detail-text"></p>
+    </div>
+
+    <div id="card-live-data">
+      <!-- Populated dynamically per stage -->
+    </div>
+
+    <div id="decoded-result" hidden>
+      <span id="result-label">Decoded:</span>
+      <span id="result-text"></span>
+    </div>
+
+    <!-- Glossary + Compare buttons -->
+    <div id="card-footer-actions">
+      <button id="btn-glossary" class="card-action-btn">Glossary</button>
+      <button id="btn-compare" class="card-action-btn">Compare Types</button>
+    </div>
+  </div>
+
+  <!-- Glossary Tooltip (shared) -->
+  <div id="glossary-tooltip" hidden>
+    <div id="tooltip-text"></div>
+  </div>
+
+  <!-- Glossary Slide-Over Panel -->
+  <div id="glossary-panel" hidden>
+    <div class="glossary-panel-header">
+      <h2>Glossary</h2>
+      <button id="btn-close-glossary">&times;</button>
+    </div>
+    <div id="glossary-list"></div>
+  </div>
+
+  <!-- 3D Scene Container -->
+  <div id="viz-container"></div>
+
+  <!-- HUD Overlay (navigation only) -->
+  <div id="hud-overlay">
+    <!-- Navigation buttons -->
+    <div id="step-controls">
+      <button id="btn-prev-step" disabled>Previous</button>
+      <button id="btn-auto-play">Pause</button>
+      <button id="btn-next-step">Next</button>
+    </div>
+  </div>
+
+  <!-- Scan your own QR -->
+  <button id="btn-scan-own">Scan Your Own QR</button>
+
+  <!-- Camera Modal -->
+  <div id="camera-modal" hidden>
+    <div class="modal-content">
+      <div class="camera-wrapper">
+        <video id="camera-feed" autoplay playsinline></video>
+        <canvas id="camera-canvas" hidden></canvas>
+        <div id="scan-overlay" hidden>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+      <div class="modal-controls">
+        <button id="btn-upload">Upload Image</button>
+        <button id="btn-close-modal">Close</button>
+        <input type="file" id="file-input" accept="image/*" hidden>
+      </div>
+      <p id="camera-status">Scanning for QR code...</p>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

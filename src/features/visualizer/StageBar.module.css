@@ -1,0 +1,118 @@
+.bar {
+  position: absolute;
+  bottom: calc(28px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--scale));
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(var(--panel-blur));
+  border-radius: 999px;
+  padding: calc(8px * var(--scale)) calc(12px * var(--scale));
+  z-index: 20;
+}
+
+.chips {
+  display: flex;
+  gap: calc(4px * var(--scale));
+}
+
+.chip {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-1);
+  display: inline-flex;
+  align-items: center;
+  gap: calc(8px * var(--scale));
+  padding: calc(8px * var(--scale)) calc(14px * var(--scale));
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: calc(13px * var(--scale));
+  font-weight: 600;
+  transition: background 140ms, color 140ms, border-color 140ms;
+}
+
+.chipNum {
+  font-family: var(--font-mono);
+  font-size: calc(11px * var(--scale));
+  color: var(--fg-3);
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+  width: calc(20px * var(--scale));
+  height: calc(20px * var(--scale));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chip:hover {
+  background: var(--accent-soft);
+  color: var(--fg-0);
+}
+
+.chipActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--fg-0);
+}
+
+.chipActive .chipNum {
+  background: var(--accent);
+  color: #07090f;
+}
+
+.chipLabel {
+  display: inline-block;
+}
+
+.iconBtn,
+.playBtn {
+  appearance: none;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--fg-1);
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  transition: background 120ms, color 120ms;
+}
+
+.iconBtn {
+  width: calc(36px * var(--scale));
+  height: calc(36px * var(--scale));
+  font-size: calc(20px * var(--scale));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.iconBtn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--fg-0);
+}
+
+.iconBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.playBtn {
+  font-size: calc(13px * var(--scale));
+  font-weight: 700;
+  padding: calc(8px * var(--scale)) calc(18px * var(--scale));
+  margin-left: calc(6px * var(--scale));
+}
+
+.playBtnOn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #07090f;
+}
+
+.playBtnOn:hover {
+  background: var(--accent-strong);
+}
