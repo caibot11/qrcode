@@ -1,7 +1,7 @@
 import { useT } from '@/locales/useT';
 import { useAppStore } from '@/stores/useAppStore';
 import { useScanStore } from '@/stores/useScanStore';
-import { QR_STAGES } from '@/lib/codes/qr/config';
+import { STAGES_BY_KIND } from '@/lib/codes/registry';
 import styles from './StageBar.module.css';
 
 function PlayIcon() {
@@ -54,9 +54,10 @@ export function StageBar() {
   const setStage = useAppStore((s) => s.setStage);
   const autoPlay = useAppStore((s) => s.autoPlay);
   const setAutoPlay = useAppStore((s) => s.setAutoPlay);
+  const codeType = useAppStore((s) => s.codeType);
   const setLastVizData = useScanStore((s) => s.setLastVizData);
 
-  const stages = QR_STAGES;
+  const stages = STAGES_BY_KIND[codeType];
 
   const onScanAgain = () => {
     setLastVizData(null);
@@ -90,7 +91,7 @@ export function StageBar() {
                 {state === 'done' ? <CheckIcon /> : i + 1}
               </span>
               <span className={styles.chipText}>
-                <span className={styles.chipLabel}>{t(s.titleKey)}</span>
+                <span className={styles.chipLabel}>{t(s.labelKey)}</span>
                 <span className={styles.chipMeta}>
                   {state === 'done'
                     ? locale === 'nl'
@@ -106,7 +107,7 @@ export function StageBar() {
 
       <button type="button" className={styles.scanBtn} onClick={onScanAgain}>
         <ResetIcon />
-        {t('controls.scanAgain')}
+        <span>{t('controls.scanAgain')}</span>
       </button>
     </div>
   );

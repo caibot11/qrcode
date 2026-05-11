@@ -10,6 +10,15 @@ export function TopBar() {
   const { t } = useT();
   const codeType = useAppStore((s) => s.codeType);
   const setCodeType = useAppStore((s) => s.setCodeType);
+  const setStage = useAppStore((s) => s.setStage);
+  const setAutoPlay = useAppStore((s) => s.setAutoPlay);
+
+  const onPickCodeType = (k: CodeKind) => {
+    if (k === codeType) return;
+    setCodeType(k);
+    setStage(0);
+    setAutoPlay(true);
+  };
 
   return (
     <header className={styles.topbar}>
@@ -29,9 +38,7 @@ export function TopBar() {
             key={k}
             type="button"
             className={`${styles.codeBtn} ${codeType === k ? styles.codeBtnActive : ''}`}
-            onClick={() => setCodeType(k)}
-            disabled={k !== 'qr'}
-            title={k !== 'qr' ? 'Coming soon' : undefined}
+            onClick={() => onPickCodeType(k)}
           >
             {t(`codeType.${k}`)}
           </button>

@@ -3,20 +3,19 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(180px * var(--scale));
   border-top: 1px solid var(--hairline);
-  background: linear-gradient(to top, rgba(23, 16, 8, 0.85), rgba(23, 16, 8, 0.0));
+  background: linear-gradient(to top, rgba(23, 16, 8, 0.92), rgba(23, 16, 8, 0.0));
   backdrop-filter: blur(8px);
-  padding: calc(28px * var(--scale)) calc(40px * var(--scale));
+  padding: calc(22px * var(--scale)) calc(32px * var(--scale));
   display: flex;
   align-items: center;
-  gap: calc(20px * var(--scale));
+  gap: calc(16px * var(--scale));
   z-index: 20;
 }
 
 .playBtn {
-  width: calc(88px * var(--scale));
-  height: calc(88px * var(--scale));
+  width: calc(76px * var(--scale));
+  height: calc(76px * var(--scale));
   border-radius: 50%;
   background: var(--accent);
   color: var(--on-accent);
@@ -30,6 +29,11 @@
   flex-shrink: 0;
 }
 
+.playBtn svg {
+  width: calc(30px * var(--scale));
+  height: calc(30px * var(--scale));
+}
+
 .playBtn:hover {
   transform: translateY(-1px);
 }
@@ -40,9 +44,12 @@
 
 .chips {
   display: flex;
-  gap: calc(10px * var(--scale));
+  gap: calc(8px * var(--scale));
   flex: 1;
   justify-content: center;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .chip {
@@ -50,9 +57,9 @@
   background: transparent;
   display: inline-flex;
   align-items: center;
-  gap: calc(10px * var(--scale));
-  padding: calc(10px * var(--scale)) calc(18px * var(--scale)) calc(10px * var(--scale))
-    calc(10px * var(--scale));
+  gap: calc(8px * var(--scale));
+  padding: calc(8px * var(--scale)) calc(14px * var(--scale)) calc(8px * var(--scale))
+    calc(8px * var(--scale));
   border-radius: 999px;
   cursor: pointer;
   border: 1.5px solid var(--accent-border);
@@ -60,6 +67,8 @@
   font-family: var(--font-display);
   transition: background 200ms, color 200ms, box-shadow 320ms,
     border-color 200ms, transform 140ms ease;
+  white-space: nowrap;
+  flex-shrink: 1;
 }
 
 .chip:hover {
@@ -85,16 +94,21 @@
 }
 
 .chipNum {
-  width: calc(32px * var(--scale));
-  height: calc(32px * var(--scale));
+  width: calc(30px * var(--scale));
+  height: calc(30px * var(--scale));
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: calc(15px * var(--scale));
+  font-size: calc(14px * var(--scale));
   border: 1.5px solid currentColor;
   flex-shrink: 0;
+}
+
+.chipNum svg {
+  width: calc(16px * var(--scale));
+  height: calc(16px * var(--scale));
 }
 
 .chip_active .chipNum {
@@ -115,6 +129,7 @@
   align-items: flex-start;
   line-height: 1.05;
   gap: calc(3px * var(--scale));
+  min-width: 0;
 }
 
 .chipMeta {
@@ -126,22 +141,14 @@
   opacity: 0.7;
 }
 
-.chip_active .chipMeta {
-  opacity: 0.7;
-}
-
 .chipLabel {
   font-family: var(--font-display);
-  font-size: calc(15px * var(--scale));
+  font-size: calc(14px * var(--scale));
   font-weight: 600;
   white-space: nowrap;
-}
-
-/* At narrower viewports, drop the step-meta line so chips stay compact. */
-@media (max-width: 1500px) {
-  .chipMeta {
-    display: none;
-  }
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: calc(140px * var(--scale));
 }
 
 .scanBtn {
@@ -151,16 +158,22 @@
   color: var(--on-accent);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: calc(15px * var(--scale));
+  font-size: calc(14px * var(--scale));
   display: inline-flex;
   align-items: center;
-  gap: calc(10px * var(--scale));
-  padding: calc(16px * var(--scale)) calc(24px * var(--scale));
+  gap: calc(8px * var(--scale));
+  padding: calc(14px * var(--scale)) calc(20px * var(--scale));
   border-radius: 999px;
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   transition: transform 140ms ease, box-shadow 240ms ease;
   flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.scanBtn svg {
+  width: calc(18px * var(--scale));
+  height: calc(18px * var(--scale));
 }
 
 .scanBtn:hover {
@@ -169,4 +182,50 @@
 
 .scanBtn:active {
   transform: translateY(1px);
+}
+
+/* Below 1500px, drop chip meta line */
+@media (max-width: 1499px) {
+  .chipMeta {
+    display: none;
+  }
+}
+
+/* Below 1300px, tighten chips so all 5 + buttons still fit */
+@media (max-width: 1299px) {
+  .chip {
+    padding: calc(6px * var(--scale)) calc(12px * var(--scale)) calc(6px * var(--scale))
+      calc(6px * var(--scale));
+    gap: calc(6px * var(--scale));
+  }
+  .chipLabel {
+    font-size: calc(13px * var(--scale));
+    max-width: calc(110px * var(--scale));
+  }
+  .chipNum {
+    width: calc(26px * var(--scale));
+    height: calc(26px * var(--scale));
+    font-size: calc(13px * var(--scale));
+  }
+  .bar {
+    padding: calc(18px * var(--scale)) calc(20px * var(--scale));
+    gap: calc(10px * var(--scale));
+  }
+}
+
+/* Below 1050px, collapse scan button to icon-only and shrink play */
+@media (max-width: 1049px) {
+  .scanBtn span {
+    display: none;
+  }
+  .scanBtn {
+    padding: calc(14px * var(--scale));
+  }
+  .playBtn {
+    width: calc(60px * var(--scale));
+    height: calc(60px * var(--scale));
+  }
+  .chipLabel {
+    max-width: calc(86px * var(--scale));
+  }
 }
