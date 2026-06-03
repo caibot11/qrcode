@@ -5,6 +5,10 @@
   "description": "A live, no-backend code-scanner explainer (QR / Aztec / DataMatrix / barcode) with a 3D decode visualizer, built for Night of the Nerdz @ Fontys.",
   "author": "Marek Mitala",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caibot11/qrcode.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
