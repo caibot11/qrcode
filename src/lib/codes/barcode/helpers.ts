@@ -4,7 +4,7 @@
  * Ported from legacy/codes/barcode/barcode-helpers.js.
  */
 
-import type { BarSegment, BarcodeEncoded } from '@/lib/codes/types';
+import type { BarSegment, BarcodeEncoded, BarcodeGroup } from '@/lib/codes/types';
 
 interface Code128Entry {
   char: string;
@@ -111,8 +111,9 @@ export function encodeCode128(text: string): BarcodeEncoded {
   // Stop
   groups.push({ entry: STOP, label: 'Stop' });
 
-  // Flatten into segments
+  // Flatten into segments + per-group decode info.
   const segments: BarSegment[] = [];
+  const groupList: BarcodeGroup[] = [];
   let segmentIndex = 0;
   for (let g = 0; g < groups.length; g++) {
     const { entry, label } = groups[g];
@@ -125,12 +126,125 @@ export function encodeCode128(text: string): BarcodeEncoded {
         groupLabel: label,
       });
     }
+    groupList.push({
+      groupIndex: g,
+      label,
+      char: entry.char,
+      value: entry.val,
+      widths: entry.pattern,
+      isGuard: g === 0 || g === groups.length - 1, // Start / Stop
+      isData: g >= 1 && g <= groups.length - 3, // the message characters
+    });
   }
 
   return {
     text,
     segments,
+    groups: groupList,
     groupCount: groups.length,
     checkDigit: checkVal,
+    format: 'code128',
   };
+}
+
+// ===== EAN-13 / UPC-A (retail product barcodes) =====
+
+// "L"/odd element widths per digit (sum 7). "G"/even = reversed; "R" = same
+// widths starting with a bar. (From ZXing's UPC/EAN reader tables.)
+const EAN_L_PATTERNS: number[][] = [
+  [3, 2, 1, 1], [2, 2, 2, 1], [2, 1, 2, 2], [1, 4, 1, 1], [1, 1, 3, 2],
+  [1, 2, 3, 1], [1, 1, 1, 4], [1, 3, 1, 2], [1, 2, 1, 3], [3, 1, 1, 2],
+];
+// Parity pattern of the 6 left digits, selected by the first (number-system)
+// digit: bit set = "G"/even, clear = "L"/odd (MSB = first left digit).
+const EAN_FIRST_DIGIT = [0x00, 0x0b, 0x0d, 0x0e, 0x13, 0x19, 0x1c, 0x15, 0x16, 0x1a];
+
+/** EAN-13 / UPC-A mod-10 check digit over the first 12 digits. */
+export function eanCheckDigit(first12: string): number {
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += Number(first12[i]) * (i % 2 === 0 ? 1 : 3);
+  return (10 - (sum % 10)) % 10;
+}
+
+interface Elem {
+  w: number;
+  bar: boolean;
+}
+function elems(widths: number[], startBar: boolean): Elem[] {
+  let bar = startBar;
+  return widths.map((w) => {
+    const e = { w, bar };
+    bar = !bar;
+    return e;
+  });
+}
+
+/**
+ * Build the genuine EAN-13 bar structure: start/center/end guards, 6 left
+ * digits (L/G parity set by the first digit) + 6 right digits (R), and a real
+ * mod-10 check digit. `text` is the full 13-digit string.
+ */
+export function encodeEan13(text: string): BarcodeEncoded {
+  const d = text.split('').map(Number);
+  const segments: BarSegment[] = [];
+  const groups: BarcodeGroup[] = [];
+  let segIdx = 0;
+  let g = 0;
+  const add = (
+    seq: Elem[],
+    meta: { label: string; char: string; value: number; isGuard: boolean; isData: boolean },
+  ) => {
+    for (const e of seq) {
+      segments.push({
+        index: segIdx++,
+        width: e.w,
+        isBar: e.bar,
+        groupIndex: g,
+        groupLabel: meta.label,
+      });
+    }
+    groups.push({
+      groupIndex: g,
+      label: meta.label,
+      char: meta.char,
+      value: meta.value,
+      widths: seq.map((e) => e.w),
+      isGuard: meta.isGuard,
+      isData: meta.isData,
+    });
+    g++;
+  };
+
+  add(elems([1, 1, 1], true), { label: 'Start', char: '', value: -1, isGuard: true, isData: false });
+  const parity = EAN_FIRST_DIGIT[d[0]];
+  for (let i = 0; i < 6; i++) {
+    const dig = d[1 + i];
+    const isG = (parity >> (5 - i)) & 1;
+    const widths = isG ? [...EAN_L_PATTERNS[dig]].reverse() : EAN_L_PATTERNS[dig];
+    add(elems(widths, false), { label: String(dig), char: String(dig), value: dig, isGuard: false, isData: true });
+  }
+  add(elems([1, 1, 1, 1, 1], false), { label: 'Center', char: '', value: -1, isGuard: true, isData: false });
+  for (let i = 0; i < 6; i++) {
+    const dig = d[7 + i];
+    add(elems(EAN_L_PATTERNS[dig], true), { label: String(dig), char: String(dig), value: dig, isGuard: false, isData: true });
+  }
+  add(elems([1, 1, 1], true), { label: 'End', char: '', value: -1, isGuard: true, isData: false });
+
+  return {
+    text,
+    segments,
+    groups,
+    groupCount: groups.length,
+    checkDigit: d[12],
+    format: 'ean13',
+  };
+}
+
+/**
+ * UPC-A is EAN-13 with an implicit leading 0. We render the genuine EAN-13
+ * structure of "0"+12 digits but keep the 12-digit text + UPC label.
+ */
+export function encodeUpcA(text: string): BarcodeEncoded {
+  const enc = encodeEan13('0' + text);
+  return { ...enc, text, checkDigit: Number(text[11]), format: 'upca' };
 }

@@ -1,144 +1,45 @@
 import type { QrVizData } from '@/lib/codes/types';
+import QrEncoder from '@zxing/library/esm/core/qrcode/encoder/Encoder';
+import { EncodeHintType, QRCodeDecoderErrorCorrectionLevel } from '@zxing/library';
+import { readFormatInfo } from '@/lib/decode/format';
 
 /**
- * Synthetic Version-2 QR code for "HELLO WORLD" — 25×25 grid with proper
- * finder patterns, timing strips, alignment marker, dark module, and 15
- * format bits encoding EC level M + mask pattern 0. Data area filled with
- * deterministic pseudo-random bits so the visualization looks real.
- *
- * Ported from legacy/codes/qr/qr-demo.js.
+ * A REAL QR code for "HELLO WORLD" — produced by ZXing's QR encoder (real
+ * data + Reed–Solomon codewords, real mask selection, real format bits), not a
+ * synthetic LFSR fill. The decode model re-reads this grid back to
+ * "HELLO WORLD", so every stage animates the true algorithm. Forced to
+ * Version 2 (25×25) for a substantial exhibit; EC level M. "HELLO WORLD" lands
+ * in alphanumeric mode (11 bits per 2 characters) — a nice contrast to the
+ * Data Matrix / Aztec byte-mode demos.
  */
-export const DEMO_QR: QrVizData = buildDemoQR();
+export const DEMO_QR: QrVizData = buildDemoQR('HELLO WORLD');
 
-function buildDemoQR(): QrVizData {
-  const size = 25;
-  const version = 2;
-  const grid: Uint8Array[] = Array.from(
-    { length: size },
-    () => new Uint8Array(size),
-  );
+function buildDemoQR(text: string): QrVizData {
+  const hints = new Map<EncodeHintType, unknown>();
+  hints.set(EncodeHintType.QR_VERSION, 2);
+  const qr = QrEncoder.encode(text, QRCodeDecoderErrorCorrectionLevel.M, hints);
+  const mat = qr.getMatrix();
+  const size = mat.getWidth();
+  const version = qr.getVersion().getVersionNumber();
 
-  placeFinder(grid, 0, 0);
-  placeFinder(grid, 0, size - 7);
-  placeFinder(grid, size - 7, 0);
+  const grid: Uint8Array[] = Array.from({ length: size }, (_, r) => {
+    const row = new Uint8Array(size);
+    for (let c = 0; c < size; c++) row[c] = mat.get(c, r) ? 1 : 0;
+    return row;
+  });
 
-  for (let i = 8; i < size - 8; i++) {
-    grid[6][i] = i % 2 === 0 ? 1 : 0;
-    grid[i][6] = i % 2 === 0 ? 1 : 0;
-  }
-
-  placeAlignment(grid, 18, 18);
-  grid[17][8] = 1; // dark module for v2
-
-  const fmtBits = [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0];
-
-  const fmtPos1: [number, number][] = [
-    [8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 7], [8, 8],
-    [7, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8],
-  ];
-
-  const fmtPos2: [number, number][] = [
-    [24, 8], [23, 8], [22, 8], [21, 8], [20, 8], [19, 8], [18, 8],
-    [8, 17], [8, 18], [8, 19], [8, 20], [8, 21], [8, 22], [8, 23], [8, 24],
-  ];
-
-  for (let i = 0; i < 15; i++) {
-    grid[fmtPos1[i][0]][fmtPos1[i][1]] = fmtBits[i];
-    grid[fmtPos2[i][0]][fmtPos2[i][1]] = fmtBits[i];
-  }
-
-  const reserved = buildReservedMapSimple(size);
-  // Deterministic Galois-LFSR fill so the demo looks like real data without
-  // shipping a real Reed-Solomon encoder.
-  let state = 0xace1;
-  for (let r = 0; r < size; r++) {
-    for (let c = 0; c < size; c++) {
-      if (!reserved[r][c]) {
-        state = ((state >> 1) ^ (-(state & 1) & 0xb400)) & 0xffff;
-        grid[r][c] = state & 1;
-      }
-    }
-  }
+  // Read EC level + mask + format-bit positions back from the encoded grid, so
+  // the categorizer unmasks with the exact mask ZXing applied.
+  const formatInfo = readFormatInfo(grid);
 
   return {
     kind: 'qr',
     version,
     gridSize: size,
     moduleGrid: grid,
-    formatInfo: {
-      raw: 0,
-      errorCorrectionLevel: 'M',
-      maskPattern: 0,
-      ecLevel: 0,
-      formatBitPositions: fmtPos1,
-    },
-    decodedText: 'HELLO WORLD',
+    formatInfo,
+    decodedText: text,
     chunks: [],
     binaryData: [],
   };
-}
-
-function placeFinder(grid: Uint8Array[], startR: number, startC: number): void {
-  for (let r = 0; r < 7; r++) {
-    for (let c = 0; c < 7; c++) {
-      const outer = r === 0 || r === 6 || c === 0 || c === 6;
-      const inner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-      grid[startR + r][startC + c] = outer || inner ? 1 : 0;
-    }
-  }
-}
-
-function placeAlignment(
-  grid: Uint8Array[],
-  centerR: number,
-  centerC: number,
-): void {
-  for (let dr = -2; dr <= 2; dr++) {
-    for (let dc = -2; dc <= 2; dc++) {
-      const outer = Math.abs(dr) === 2 || Math.abs(dc) === 2;
-      const center = dr === 0 && dc === 0;
-      grid[centerR + dr][centerC + dc] = outer || center ? 1 : 0;
-    }
-  }
-}
-
-function buildReservedMapSimple(size: number): Uint8Array[] {
-  const r: Uint8Array[] = Array.from(
-    { length: size },
-    () => new Uint8Array(size),
-  );
-
-  for (let i = 0; i < 9; i++) {
-    for (let j = 0; j < 9; j++) r[i][j] = 1;
-    for (let j = size - 8; j < size; j++) r[i][j] = 1;
-  }
-  for (let i = size - 8; i < size; i++) {
-    for (let j = 0; j < 9; j++) r[i][j] = 1;
-  }
-
-  for (let i = 0; i < size; i++) {
-    r[6][i] = 1;
-    r[i][6] = 1;
-  }
-
-  for (let dr = -2; dr <= 2; dr++) {
-    for (let dc = -2; dc <= 2; dc++) {
-      r[18 + dr][18 + dc] = 1;
-    }
-  }
-
-  for (let i = 0; i < 9; i++) {
-    r[8][i] = 1;
-    r[i][8] = 1;
-  }
-  for (let i = 0; i < 8; i++) {
-    r[size - 1 - i][8] = 1;
-  }
-  for (let i = 0; i < 8; i++) {
-    r[8][size - 8 + i] = 1;
-  }
-
-  r[17][8] = 1;
-
-  return r;
 }

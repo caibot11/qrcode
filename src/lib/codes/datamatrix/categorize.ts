@@ -4,6 +4,7 @@ import {
   computeDmDiagonalOrder,
   DmCat,
 } from './helpers';
+import { buildDmModel, type DmDecodeModel } from './model';
 
 export interface DmModule {
   row: number;
@@ -19,16 +20,22 @@ export interface DmModule {
 
 export interface DmCategorized {
   modules: DmModule[];
-  /** Indices into modules[], in diagonal read order, data-modules only */
+  /**
+   * Indices into modules[], in the REAL ECC200 placement read order, where
+   * codeword k = dataModuleIndices[k*8 … k*8+8] (MSB→LSB). Falls back to a
+   * diagonal sweep over data modules only if the model couldn't be built.
+   */
   dataModuleIndices: number[];
-  /** ~60% of data modules are "data", the rest are EC */
+  /** Count of data MODULES (data codewords × 8); EC modules follow in read order. */
   dataCodewordCount: number;
+  /** Real decode (codewords/blocks/RS/symbols), or null if it couldn't be built. */
+  model: DmDecodeModel | null;
 }
 
 export function categorizeDm(viz: DmVizData): DmCategorized {
   const size = viz.gridSize;
   const catInfo = categorizeDmModules(size);
-  const diag = computeDmDiagonalOrder(size);
+  const model = buildDmModel(viz.moduleGrid);
 
   const modules: DmModule[] = catInfo.map(({ row, col, cat }) => ({
     row,
@@ -46,16 +53,28 @@ export function categorizeDm(viz: DmVizData): DmCategorized {
   modules.forEach((m, i) => moduleMap.set(m.row * size + m.col, i));
 
   const dataModuleIndices: number[] = [];
-  for (const [r, c] of diag) {
-    const idx = moduleMap.get(r * size + c);
-    if (idx !== undefined && modules[idx].cat === DmCat.Data) {
-      dataModuleIndices.push(idx);
+  if (model) {
+    // Real placement order: every codeword's 8 modules, in read order.
+    for (const [r, c] of model.readOrder) {
+      const idx = moduleMap.get(r * size + c);
+      if (idx !== undefined) dataModuleIndices.push(idx);
+    }
+  } else {
+    // Fallback: simplified diagonal sweep over the interior data region.
+    for (const [r, c] of computeDmDiagonalOrder(size)) {
+      const idx = moduleMap.get(r * size + c);
+      if (idx !== undefined && modules[idx].cat === DmCat.Data) {
+        dataModuleIndices.push(idx);
+      }
     }
   }
 
   return {
     modules,
     dataModuleIndices,
-    dataCodewordCount: Math.floor(dataModuleIndices.length * 0.6),
+    dataCodewordCount: model
+      ? model.dataCodewords * 8
+      : Math.floor(dataModuleIndices.length * 0.6),
+    model,
   };
 }

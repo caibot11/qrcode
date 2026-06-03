@@ -91,7 +91,9 @@ export function InstancedGrid({
       receiveShadow={false}
     >
       <boxGeometry args={boxSize} />
-      <meshPhongMaterial flatShading={false} />
+      {/* Unlit + no tonemapping/fog so module colours render exactly as set —
+          the warm scene lights were washing them out to a pale grey filter. */}
+      <meshBasicMaterial toneMapped={false} fog={false} />
     </instancedMesh>
   );
 }

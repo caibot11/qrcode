@@ -137,4 +137,29 @@
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 12px var(--accent-glow);
+  animation: cameraPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes cameraPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* Paused (a result is on screen) — steady, no pulse. */
+.cameraPill[data-scan-state='decoded'] .cameraDot {
+  animation: none;
+  opacity: 0.6;
+}
+
+/* Camera error — warn colour so the operator notices at a glance. */
+.cameraPill[data-scan-state='error'] {
+  background: rgba(224, 104, 60, 0.14);
+  border-color: rgba(224, 104, 60, 0.5);
+  color: var(--warn, #e0683c);
+}
+
+.cameraPill[data-scan-state='error'] .cameraDot {
+  background: var(--warn, #e0683c);
+  box-shadow: none;
+  animation: none;
 }

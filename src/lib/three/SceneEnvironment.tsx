@@ -21,9 +21,11 @@ export function SceneEnvironment({
     <>
       <fogExp2 attach="fog" args={[fogColor, fogDensity]} />
 
-      <ambientLight color={0x6a5236} intensity={1.0} />
+      {/* Lower ambient + key so per-module colours aren't washed out to pale
+          on the bright (light) modules — keeps dark vs light contrast crisp. */}
+      <ambientLight color={0x6a5236} intensity={0.6} />
       {/* Key — warm light from upper-left front */}
-      <directionalLight position={[-6, 8, 12]} intensity={1.6} color={'#fff0d6'} />
+      <directionalLight position={[-6, 8, 12]} intensity={1.05} color={'#fff0d6'} />
       {/* Fill — cooler bounce from below-right */}
       <directionalLight position={[8, -4, 6]} intensity={0.35} color={'#7ab8ff'} />
       {/* Rim — cool from behind to separate code from background */}

@@ -134,7 +134,7 @@
 
 .chipMeta {
   font-family: var(--font-mono);
-  font-size: calc(10px * var(--scale));
+  font-size: calc(11px * var(--scale));
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -143,12 +143,12 @@
 
 .chipLabel {
   font-family: var(--font-display);
-  font-size: calc(14px * var(--scale));
+  font-size: calc(16px * var(--scale));
   font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  max-width: calc(140px * var(--scale));
+  max-width: calc(150px * var(--scale));
 }
 
 .scanBtn {

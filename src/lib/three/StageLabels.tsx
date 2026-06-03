@@ -5,7 +5,19 @@ export interface LabelSpec {
   id: string;
   text: string;
   position: [number, number, number];
-  variant?: 'default' | 'bit' | 'char' | 'decoded' | 'data' | 'ec' | 'warn' | 'success';
+  variant?:
+    | 'default'
+    | 'bit'
+    | 'char'
+    | 'decoded'
+    | 'data'
+    | 'ec'
+    | 'warn'
+    | 'success'
+    | 'pill'
+    | 'decoding';
+  /** 0..1, default 1. Lets per-frame label fades skip mount/unmount churn. */
+  opacity?: number;
 }
 
 interface Props {
@@ -21,12 +33,10 @@ const VARIANT_CLASS: Record<NonNullable<LabelSpec['variant']>, string> = {
   ec: `${styles.label} ${styles.ec}`,
   warn: `${styles.label} ${styles.warn}`,
   success: `${styles.label} ${styles.success}`,
+  pill: `${styles.label} ${styles.pill}`,
+  decoding: `${styles.label} ${styles.decoding}`,
 };
 
-/**
- * 3D-positioned text labels via drei's <Html>. Replaces the legacy
- * CSS2DRenderer label system.
- */
 export function StageLabels({ labels }: Props) {
   return (
     <>
@@ -38,7 +48,12 @@ export function StageLabels({ labels }: Props) {
           zIndexRange={[40, 0]}
           pointerEvents="none"
         >
-          <div className={VARIANT_CLASS[l.variant ?? 'default']}>{l.text}</div>
+          <div
+            className={VARIANT_CLASS[l.variant ?? 'default']}
+            style={l.opacity !== undefined ? { opacity: l.opacity } : undefined}
+          >
+            {l.text}
+          </div>
         </Html>
       ))}
     </>

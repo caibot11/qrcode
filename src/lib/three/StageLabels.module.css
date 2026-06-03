@@ -58,3 +58,28 @@
   color: var(--good);
   border-color: var(--good);
 }
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: calc(20px * var(--scale));
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--fg-0);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  padding: calc(8px * var(--scale)) calc(20px * var(--scale));
+}
+
+.decoding {
+  font-family: var(--font-mono);
+  font-size: calc(34px * var(--scale));
+  font-weight: 800;
+  color: var(--accent-strong);
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-shadow:
+    0 0 14px var(--accent-glow),
+    0 2px 4px rgba(0, 0, 0, 0.7);
+}

@@ -2,13 +2,17 @@
   position: absolute;
   top: calc(110px * var(--scale));
   right: calc(40px * var(--scale));
-  bottom: calc(220px * var(--scale));
-  width: clamp(320px, 24vw, 420px);
+  /* Height follows the content (capped to the screen) so the bottom padding is
+     always honored — a fixed height squeezed the "Decoded" line against the
+     edge on shorter panels. */
+  max-height: calc(100vh - 150px * var(--scale));
+  overflow-y: auto;
+  width: clamp(340px, 23vw, 440px);
   background: var(--panel);
   border: 1px solid var(--hairline);
   backdrop-filter: blur(var(--panel-blur));
   border-radius: var(--radius-lg);
-  padding: calc(30px * var(--scale)) calc(30px * var(--scale));
+  padding: calc(32px * var(--scale)) calc(32px * var(--scale)) calc(40px * var(--scale));
   z-index: 15;
   display: flex;
   flex-direction: column;
@@ -19,11 +23,11 @@
 .stageBadge {
   display: inline-flex;
   align-self: flex-start;
-  padding: calc(6px * var(--scale)) calc(12px * var(--scale));
+  padding: calc(7px * var(--scale)) calc(14px * var(--scale));
   border-radius: 999px;
   background: var(--accent-soft);
   font-family: var(--font-mono);
-  font-size: calc(11px * var(--scale));
+  font-size: calc(13px * var(--scale));
   font-weight: 700;
   letter-spacing: 0.16em;
   color: var(--accent);
@@ -32,23 +36,23 @@
 .title {
   margin: calc(16px * var(--scale)) 0 0;
   font-family: var(--font-display);
-  font-size: calc(40px * var(--scale));
+  font-size: calc(46px * var(--scale));
   font-weight: 700;
-  line-height: 1.05;
+  line-height: 1.04;
   letter-spacing: -0.02em;
   color: var(--fg-0);
 }
 
 .hairline {
-  margin: calc(20px * var(--scale)) 0;
+  margin: calc(18px * var(--scale)) 0;
   height: 1px;
   background: var(--hairline);
 }
 
 .short {
   font-family: var(--font-display);
-  font-size: calc(17px * var(--scale));
-  line-height: 1.5;
+  font-size: calc(24px * var(--scale));
+  line-height: 1.45;
   color: var(--fg-1);
   margin: 0;
   font-weight: 400;
@@ -73,15 +77,15 @@
   gap: calc(10px * var(--scale));
   margin-bottom: calc(10px * var(--scale));
   font-family: var(--font-display);
-  font-size: calc(12px * var(--scale));
+  font-size: calc(14px * var(--scale));
   font-weight: 700;
   letter-spacing: 0.16em;
   color: var(--accent);
 }
 
 .factBulb {
-  width: calc(28px * var(--scale));
-  height: calc(28px * var(--scale));
+  width: calc(30px * var(--scale));
+  height: calc(30px * var(--scale));
   border-radius: 50%;
   background: var(--accent);
   color: var(--on-accent);
@@ -91,7 +95,7 @@
 
 .factBody {
   font-family: var(--font-display);
-  font-size: calc(15px * var(--scale));
+  font-size: calc(18px * var(--scale));
   line-height: 1.45;
   color: var(--fg-0);
   font-weight: 500;
@@ -104,7 +108,7 @@
 
 .decodedLabel {
   font-family: var(--font-mono);
-  font-size: calc(11px * var(--scale));
+  font-size: calc(13px * var(--scale));
   font-weight: 700;
   letter-spacing: 0.16em;
   color: var(--fg-2);
@@ -113,7 +117,7 @@
 
 .decodedValue {
   font-family: var(--font-mono);
-  font-size: calc(17px * var(--scale));
+  font-size: calc(23px * var(--scale));
   font-weight: 700;
   color: var(--accent);
   word-break: break-all;

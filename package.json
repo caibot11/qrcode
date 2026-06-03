@@ -2,6 +2,9 @@
   "name": "nerdz",
   "private": true,
   "version": "0.1.0",
+  "description": "A live, no-backend code-scanner explainer (QR / Aztec / DataMatrix / barcode) with a 3D decode visualizer, built for Night of the Nerdz @ Fontys.",
+  "author": "Marek Mitala",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +15,7 @@
   "dependencies": {
     "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
+    "@zxing/library": "^0.23.0",
     "jsqr": "^1.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

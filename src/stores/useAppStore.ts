@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import type { CodeKind } from '@/lib/codes/types';
 
+/** Display playback mode: idle attract loop vs. a live scanned code. */
+export type DisplayMode = 'attract' | 'live';
+
 interface AppState {
   codeType: CodeKind;
   setCodeType: (k: CodeKind) => void;
@@ -11,8 +14,8 @@ interface AppState {
   autoPlay: boolean;
   setAutoPlay: (b: boolean) => void;
 
-  isAttract: boolean;
-  setAttract: (b: boolean) => void;
+  mode: DisplayMode;
+  setMode: (m: DisplayMode) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -25,6 +28,6 @@ export const useAppStore = create<AppState>((set) => ({
   autoPlay: true,
   setAutoPlay: (autoPlay) => set({ autoPlay }),
 
-  isAttract: false,
-  setAttract: (isAttract) => set({ isAttract }),
+  mode: 'attract',
+  setMode: (mode) => set({ mode }),
 }));

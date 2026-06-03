@@ -17,7 +17,7 @@ export const BARCODE_STAGES: readonly StageConfig[] = [
     titleKey: 'stage.barcode.2.title',
     labelKey: 'stage.barcode.2.label',
     bodyKey: 'stage.barcode.2.short',
-    duration: 12000,
+    duration: 18000,
   },
   {
     titleKey: 'stage.barcode.3.title',

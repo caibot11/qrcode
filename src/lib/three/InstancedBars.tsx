@@ -70,7 +70,8 @@ export function InstancedBars({ modulesRef }: Props) {
       receiveShadow={false}
     >
       <boxGeometry args={[1, 1, 1]} />
-      <meshPhongMaterial flatShading={false} />
+      {/* Unlit so bar colours render exactly as set (no warm-light wash). */}
+      <meshBasicMaterial toneMapped={false} fog={false} />
     </instancedMesh>
   );
 }

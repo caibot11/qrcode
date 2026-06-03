@@ -36,6 +36,11 @@ export function categorizeBarcode(viz: BarcodeVizData): BarcodeCategorized {
   const segments = viz.encoded.segments;
   const groupCount = viz.encoded.groupCount;
   const checkGroupIndex = groupCount - 2; // Check is second to last
+  // Guards come from the group metadata (Code 128: Start/Stop; EAN/UPC also a
+  // center guard) — not just the first/last group.
+  const guardSet = new Set(
+    viz.encoded.groups.filter((g) => g.isGuard).map((g) => g.groupIndex),
+  );
 
   // Compute cumulative x (centered around 0).
   let totalWidth = 0;
@@ -55,7 +60,7 @@ export function categorizeBarcode(viz: BarcodeVizData): BarcodeCategorized {
       xCenter,
       width: s.width,
       isBar: s.isBar,
-      isGuard: s.groupIndex === 0 || s.groupIndex === groupCount - 1,
+      isGuard: guardSet.has(s.groupIndex),
       isCheck: s.groupIndex === checkGroupIndex,
       groupIndex: s.groupIndex,
       groupLabel: s.groupLabel,

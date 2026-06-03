@@ -28,9 +28,11 @@ interface Props {
   stage: number;
   autoPlay: boolean;
   onAdvance: (newStage: number) => void;
+  loop?: boolean;
+  onFinished?: () => void;
 }
 
-export function BarcodeScene({ viz, stage, autoPlay, onAdvance }: Props) {
+export function BarcodeScene({ viz, stage, autoPlay, onAdvance, loop, onFinished }: Props) {
   const categorized = useMemo(() => categorizeBarcode(viz), [viz]);
   const modulesRef = useRef<BarcodeModule[]>(categorized.modules);
 
@@ -92,6 +94,8 @@ export function BarcodeScene({ viz, stage, autoPlay, onAdvance }: Props) {
     durations: BARCODE_STAGES.map((s) => s.duration),
     autoPlay,
     onAdvance,
+    loop,
+    onFinished,
   });
 
   useFrame(() => {
@@ -291,9 +295,11 @@ function renderStage1(ctx: Ctx): LabelSpec[] {
   return labels;
 }
 
-// Stage 2: Red laser sweeps left to right.
+// Stage 2: Red laser sweeps left to right, MEASURING the bar/space element
+// widths of each character group and resolving them to the real Code 128
+// symbol value (the actual decode step — not "1/0 per bar").
 function renderStage2(ctx: Ctx): LabelSpec[] {
-  const { modules, categorized, laser } = ctx;
+  const { modules, categorized, viz, laser } = ctx;
   const p = ctx.eased;
 
   const sweepP = Math.max(0, Math.min(1, p / 0.8));
@@ -320,23 +326,56 @@ function renderStage2(ctx: Ctx): LabelSpec[] {
     if (m.xCenter < laserX && m.isBar) {
       const dist = laserX - m.xCenter;
       const brightness = Math.max(0.3, 1 - dist / 14);
-      m._r = lerp(m._r, 1.0, brightness);
-      m._g = lerp(m._g, 0.25, brightness);
-      m._b = lerp(m._b, 0.25, brightness);
+      m._r = lerp(m._r, BC_ACCENT.r, brightness);
+      m._g = lerp(m._g, BC_ACCENT.g, brightness);
+      m._b = lerp(m._b, BC_ACCENT.b, brightness);
     }
   }
 
-  // Show bits near the laser.
+  // Width-measurement readout: find the group the laser is currently scanning,
+  // reveal each measured element width as the laser crosses it, then resolve the
+  // full pattern to its real Code 128 value (+ character for data groups).
   const labels: LabelSpec[] = [];
-  const near = modules
-    .filter((m) => Math.abs(m.xCenter - laserX) < 2.5)
-    .slice(0, 4);
-  for (let i = 0; i < near.length; i++) {
-    const m = near[i];
+  const groupSegs = new Map<number, BarcodeModule[]>();
+  for (const m of modules) {
+    const arr = groupSegs.get(m.groupIndex);
+    if (arr) arr.push(m);
+    else groupSegs.set(m.groupIndex, [m]);
+  }
+  let curG = -1;
+  let curLeft = -Infinity;
+  for (const [g, segs] of groupSegs) {
+    let left = Infinity;
+    for (const s of segs) left = Math.min(left, s.xCenter - s.width / 2);
+    if (left <= laserX && left > curLeft) {
+      curLeft = left;
+      curG = g;
+    }
+  }
+  if (curG >= 0) {
+    const segs = groupSegs
+      .get(curG)!
+      .slice()
+      .sort((a, b) => a.xCenter - b.xCenter);
+    const grp = viz.encoded.groups.find((x) => x.groupIndex === curG);
+    const widths = grp ? grp.widths : segs.map((s) => s.width);
+    let measured = 0;
+    for (const s of segs) if (s.xCenter + s.width / 2 <= laserX) measured++;
+    const parts = widths.map((w, j) => (j < measured ? String(w) : '·'));
+    const cx = segs.reduce((s, m) => s + m.xCenter, 0) / segs.length;
+    let text = `[${parts.join('-')}]`;
+    if (measured >= segs.length && grp) {
+      if (grp.isGuard) {
+        text += ` (${grp.label})`;
+      } else {
+        text += ` → ${grp.value}`;
+        if (grp.char && grp.char !== String(grp.value)) text += ` "${grp.char}"`;
+      }
+    }
     labels.push({
-      id: `scan-bit-${i}`,
-      text: m.isBar ? '1' : '0',
-      position: [m.xCenter, BAR_TARGET_HEIGHT + 2, 0],
+      id: 'scan-widths',
+      text,
+      position: [cx, BAR_TARGET_HEIGHT + 2, 0],
       variant: 'bit',
     });
   }
@@ -398,15 +437,18 @@ function renderStage3(ctx: Ctx): LabelSpec[] {
   return labels;
 }
 
-// Stage 4: Reveal each character — its bar group lights up in accent then settles to cream.
+// Stage 4: Reveal each decoded character — its bar group lights up in accent
+// then settles to cream. Driven by the real data groups, so it works for both
+// Code 128 letters and EAN/UPC digits.
 function renderStage4(ctx: Ctx): LabelSpec[] {
   const { modules, viz } = ctx;
   const p = ctx.eased;
   const text = viz.decodedText;
-  const charCount = text.length;
+  const dataGroups = viz.encoded.groups.filter((g) => g.isData);
+  const total = dataGroups.length;
 
   const revealP = Math.min(1, p / 0.7);
-  const charsRevealed = Math.floor(revealP * (charCount + 0.999));
+  const revealed = Math.floor(revealP * (total + 0.999));
   const finalP = Math.max(0, Math.min(1, (p - 0.8) / 0.2));
 
   for (const m of modules) {
@@ -414,16 +456,16 @@ function renderStage4(ctx: Ctx): LabelSpec[] {
     m._r *= 0.32; m._g *= 0.32; m._b *= 0.32;
   }
 
-  const currentCharIdx = Math.min(charsRevealed, charCount) - 1;
+  const currentIdx = Math.min(revealed, total) - 1;
   const labels: LabelSpec[] = [];
 
-  for (let i = 0; i < Math.min(charsRevealed, charCount); i++) {
-    const groupIdx = i + 1; // +1 because index 0 is Start
-    const isCurrent = i === currentCharIdx && revealP < 1;
+  for (let i = 0; i < Math.min(revealed, total); i++) {
+    const grp = dataGroups[i];
+    const isCurrent = i === currentIdx && revealP < 1;
     const cc = isCurrent ? BC_ACCENT : CREAM_RGB;
     const pulse = isCurrent ? 0.8 + 0.2 * Math.sin(performance.now() * 0.008) : 1.0;
 
-    const groupSegs = modules.filter((m) => m.groupIndex === groupIdx);
+    const groupSegs = modules.filter((m) => m.groupIndex === grp.groupIndex);
     for (const m of groupSegs) {
       if (m.isBar) {
         m._r = cc.r * pulse;
@@ -443,7 +485,7 @@ function renderStage4(ctx: Ctx): LabelSpec[] {
       const cx = groupSegs.reduce((s, m) => s + m.xCenter, 0) / groupSegs.length;
       labels.push({
         id: `char-decode-${i}`,
-        text: text[i],
+        text: grp.char,
         position: [cx, BAR_TARGET_HEIGHT + 3, 0],
         variant: isCurrent ? 'char' : 'decoded',
       });

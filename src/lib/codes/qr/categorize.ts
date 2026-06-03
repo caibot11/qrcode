@@ -5,6 +5,7 @@ import {
   generateMaskGrid,
   getAlignmentPositions,
 } from './helpers';
+import { buildQrModel, type QrDecodeModel } from './model';
 
 export const QrCat = {
   Finder: 0,
@@ -43,6 +44,8 @@ export interface QrCategorized {
   dataModuleIndices: number[];
   /** Count of data codewords (vs error-correction codewords) — approximated as 60% */
   dataCodewordCount: number;
+  /** Real decode (codewords/blocks/RS/symbols), or null if it couldn't be built. */
+  model: QrDecodeModel | null;
 }
 
 /**
@@ -150,6 +153,15 @@ export function categorizeQr(viz: QrVizData): QrCategorized {
     if (idx !== undefined) dataModuleIndices.push(idx);
   }
 
+  // Real decode model (codewords / blocks / RS / symbols). The read order is
+  // the genuine zig-zag, so it maps 1:1 onto dataModuleIndices.
+  const model = buildQrModel(
+    unmaskedGrid,
+    zigzag,
+    version,
+    viz.formatInfo.errorCorrectionLevel,
+  );
+
   return {
     modules,
     reserved,
@@ -158,6 +170,9 @@ export function categorizeQr(viz: QrVizData): QrCategorized {
     alignPositions,
     unmaskedGrid,
     dataModuleIndices,
-    dataCodewordCount: Math.floor(dataModuleIndices.length * 0.6),
+    dataCodewordCount: model
+      ? model.dataCodewords * 8 // real data-module count
+      : Math.floor(dataModuleIndices.length * 0.6),
+    model,
   };
 }

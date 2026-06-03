@@ -13,7 +13,13 @@ import { useAppStore } from '@/stores/useAppStore';
 import { useScanStore } from '@/stores/useScanStore';
 import styles from './VisualizerCanvas.module.css';
 
-export function VisualizerCanvas() {
+interface Props {
+  /** Passed through to the active scene's stage animator. */
+  loop?: boolean;
+  onFinished?: () => void;
+}
+
+export function VisualizerCanvas({ loop, onFinished }: Props) {
   const codeType = useAppStore((s) => s.codeType);
   const stage = useAppStore((s) => s.stage);
   const setStage = useAppStore((s) => s.setStage);
@@ -38,7 +44,7 @@ export function VisualizerCanvas() {
         : codeType === 'aztec'
           ? DEMO_AZTEC.gridSize
           : DEMO_QR.gridSize;
-    const dist = sz * 2.0;
+    const dist = sz * (codeType === 'aztec' ? 2.2 : 1.85);
     initialPos = [dist * 0.09, dist * 0.05, dist * 0.99];
     zoomMin = sz * 0.9;
     zoomMax = sz * 3.5;
@@ -64,6 +70,8 @@ export function VisualizerCanvas() {
               stage={stage}
               autoPlay={autoPlay}
               onAdvance={setStage}
+              loop={loop}
+              onFinished={onFinished}
             />
           )}
           {codeType === 'datamatrix' && (
@@ -72,6 +80,8 @@ export function VisualizerCanvas() {
               stage={stage}
               autoPlay={autoPlay}
               onAdvance={setStage}
+              loop={loop}
+              onFinished={onFinished}
             />
           )}
           {codeType === 'aztec' && (
@@ -80,6 +90,8 @@ export function VisualizerCanvas() {
               stage={stage}
               autoPlay={autoPlay}
               onAdvance={setStage}
+              loop={loop}
+              onFinished={onFinished}
             />
           )}
           {codeType === 'barcode' && (
@@ -88,6 +100,8 @@ export function VisualizerCanvas() {
               stage={stage}
               autoPlay={autoPlay}
               onAdvance={setStage}
+              loop={loop}
+              onFinished={onFinished}
             />
           )}
         </Suspense>

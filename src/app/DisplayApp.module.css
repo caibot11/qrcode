@@ -1,0 +1,40 @@
+/* Scale the whole TV UI up on bigger panels so the supporting steps stay
+   readable from across a hall. Guarded on height too, so a wide-but-short
+   window never scales past what fits. Scoped to the display page (the laptop
+   scan page keeps --scale: 1). */
+.display {
+  --scale: 1;
+}
+
+/* Step the scale by viewport HEIGHT (the axis the info panel is bound by), so
+   it grows smoothly from a laptop preview to a 4K wall without overflowing. */
+@media (min-height: 1000px) {
+  .display { --scale: 1.12; }
+}
+@media (min-height: 1200px) {
+  .display { --scale: 1.32; }
+}
+@media (min-height: 1400px) {
+  .display { --scale: 1.5; }
+}
+@media (min-height: 1650px) {
+  .display { --scale: 1.72; }
+}
+@media (min-height: 2000px) {
+  .display { --scale: 2.05; }
+}
+
+.brandSlot {
+  position: absolute;
+  top: calc(22px * var(--scale));
+  left: calc(40px * var(--scale));
+  z-index: 20;
+}
+
+.tabsSlot {
+  position: absolute;
+  top: calc(26px * var(--scale));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+}

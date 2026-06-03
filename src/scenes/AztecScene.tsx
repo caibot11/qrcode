@@ -15,7 +15,7 @@ import {
   ACCENT_RGB,
   ACCENT_STRONG_RGB,
   CREAM_RGB,
-  WARN_RGB,
+  EC_RGB,
 } from '@/lib/codes/accents';
 import { InstancedGrid } from '@/lib/three/InstancedGrid';
 import { CameraRig, type CameraGoal } from '@/lib/three/CameraRig';
@@ -32,9 +32,11 @@ interface Props {
   stage: number;
   autoPlay: boolean;
   onAdvance: (newStage: number) => void;
+  loop?: boolean;
+  onFinished?: () => void;
 }
 
-export function AztecScene({ viz, stage, autoPlay, onAdvance }: Props) {
+export function AztecScene({ viz, stage, autoPlay, onAdvance, loop, onFinished }: Props) {
   const categorized = useMemo(() => categorizeAztec(viz), [viz]);
   const modulesRef = useRef<AztecModule[]>(categorized.modules);
 
@@ -43,7 +45,7 @@ export function AztecScene({ viz, stage, autoPlay, onAdvance }: Props) {
   }, [categorized]);
 
   const defaultGoal = useMemo<CameraGoal>(() => {
-    const dist = viz.gridSize * 2.4;
+    const dist = viz.gridSize * 2.2;
     return {
       position: [dist * 0.09, dist * 0.05, dist * 0.99],
       target: [0, 0, 0],
@@ -100,6 +102,8 @@ export function AztecScene({ viz, stage, autoPlay, onAdvance }: Props) {
     durations: AZTEC_STAGES.map((s) => s.duration),
     autoPlay,
     onAdvance,
+    loop,
+    onFinished,
   });
 
   useFrame(() => {
@@ -178,9 +182,9 @@ interface Ctx {
 function setDefaultColors(modules: AztecModule[]): void {
   for (const m of modules) {
     if (m.val) {
-      m._r = 0.78; m._g = 0.8; m._b = 0.84;
+      m._r = 0.02; m._g = 0.02; m._b = 0.03;
     } else {
-      m._r = 0.1; m._g = 0.11; m._b = 0.14;
+      m._r = 0.93; m._g = 0.94; m._b = 0.97;
     }
     m._y = 0;
     m._scaleY = 1;
@@ -226,8 +230,9 @@ function renderStage0(ctx: Ctx): LabelSpec[] {
 
 // Stage 1: Mode message ring lights up.
 function renderStage1(ctx: Ctx): LabelSpec[] {
-  const { modules, halfSize } = ctx;
+  const { modules, categorized, halfSize } = ctx;
   const p = ctx.eased;
+  const model = categorized.model;
   const sc = AZ_ACCENT_STRONG;
   const riseP = Math.min(1, p / 0.5);
   const infoP = Math.max(0, Math.min(1, (p - 0.5) / 0.5));
@@ -250,7 +255,10 @@ function renderStage1(ctx: Ctx): LabelSpec[] {
     labels.push({ id: 'mode-label', text: 'Mode message', position: [0, -halfSize + 2, 3] });
   }
   if (infoP > 0.3) {
-    labels.push({ id: 'mode-info', text: 'Layers 2 · Words 5', position: [0, halfSize - 2, 3] });
+    const info = model
+      ? `Layers ${model.nbLayers} · Words ${model.dataCodewords}`
+      : 'Layers 2 · Words 5';
+    labels.push({ id: 'mode-info', text: info, position: [0, halfSize - 2, 3] });
   }
   return labels;
 }
@@ -308,133 +316,181 @@ function renderStage2(ctx: Ctx): LabelSpec[] {
   return [];
 }
 
-// Stage 3: Error correction — same data/EC split as QR/DM.
+// Stage 3: Error correction — real codeword de-interleave (data vs EC, by the
+// genuine codeword size) + genuine Reed–Solomon damage→recover.
 function renderStage3(ctx: Ctx): LabelSpec[] {
-  const { modules, categorized, shield } = ctx;
+  const { modules, categorized, halfSize, shield } = ctx;
   const p = ctx.eased;
+  const model = categorized.model;
 
   const separateP = Math.min(1, p / 0.3);
-  const shieldP = Math.max(0, Math.min(1, (p - 0.3) / 0.3));
-  const returnP = Math.max(0, Math.min(1, (p - 0.8) / 0.2));
+  const damageP = Math.max(0, Math.min(1, (p - 0.5) / 0.35));
+  const returnP = Math.max(0, Math.min(1, (p - 0.85) / 0.15));
 
   const dataColor = AZ_ACCENT;
-  const ecColor = WARN_RGB;
+  const ecColor = EC_RGB;
 
-  for (let i = 0; i < categorized.dataModuleIndices.length; i++) {
-    const idx = categorized.dataModuleIndices[i];
-    const m = modules[idx];
-    const isData = i < categorized.dataCodewordCount;
-    if (separateP > 0) {
-      const sep = easeOutCubic(separateP);
-      const ret = returnP > 0 ? easeOutCubic(returnP) : 0;
-      if (isData) {
-        m._y = sep * 2.0 * (1 - ret);
-        m._r = lerp(m._r, dataColor.r, sep);
-        m._g = lerp(m._g, dataColor.g, sep);
-        m._b = lerp(m._b, dataColor.b, sep);
-      } else {
-        m._y = sep * -1.0 * (1 - ret);
-        m._r = lerp(m._r, ecColor.r, sep);
-        m._g = lerp(m._g, ecColor.g, sep);
-        m._b = lerp(m._b, ecColor.b, sep);
+  const readOrder = categorized.dataModuleIndices;
+  const totalLen = readOrder.length;
+  const cwSize = categorized.codewordSize;
+  const dataBytes = model
+    ? model.dataCodewords
+    : Math.floor((totalLen / cwSize) * 0.6);
+  const ecBytes = model
+    ? model.ecCodewords
+    : Math.floor(totalLen / cwSize) - dataBytes;
+  const correctable = model ? model.correctable : 2;
+  const isDataModule = (i: number): boolean =>
+    model ? (model.codewordIsData[Math.floor(i / cwSize)] ?? true) : i < dataBytes * cwSize;
+
+  // Separate codewords: data plane lifts/accent, EC plane lowers/red.
+  const sepEased = easeOutCubic(separateP);
+  const retEased = returnP > 0 ? easeOutCubic(returnP) : 0;
+  for (let i = 0; i < totalLen; i++) {
+    if (separateP <= 0) break;
+    const m = modules[readOrder[i]];
+    const isData = isDataModule(i);
+    const col = isData ? dataColor : ecColor;
+    m._y = sepEased * (isData ? 2.0 : -1.0) * (1 - retEased);
+    m._r = lerp(m._r, col.r, sepEased);
+    m._g = lerp(m._g, col.g, sepEased);
+    m._b = lerp(m._b, col.b, sepEased);
+  }
+
+  // Damage → recover: corrupt a few codewords, then flash them back. RS
+  // genuinely fixes up to `correctable` codeword errors.
+  let damagedCount = 0;
+  if (damageP > 0) {
+    const cwCount = Math.floor(totalLen / cwSize);
+    const show = Math.min(correctable, 6);
+    const stepCw = Math.max(1, Math.floor(cwCount / Math.max(1, show)));
+    for (let cw = 0; cw < cwCount && damagedCount < show; cw += stepCw) {
+      damagedCount++;
+      for (let b = 0; b < cwSize; b++) {
+        const i = cw * cwSize + b;
+        if (i >= totalLen) break;
+        const m = modules[readOrder[i]];
+        if (damageP < 0.5) {
+          const dP = damageP * 2;
+          m._r = lerp(m._r, 1.0, dP);
+          m._g = lerp(m._g, 0.2, dP);
+          m._b = lerp(m._b, 0.2, dP);
+        } else if (Math.sin((damageP - 0.5) * 2 * Math.PI * 3) > 0) {
+          m._r = 1.0; m._g = 1.0; m._b = 1.0;
+        }
       }
     }
   }
 
-  if (shield) {
-    if (shieldP > 0 && returnP < 1) {
-      shield.visible = true;
-      const sm = shield.material as THREE.MeshBasicMaterial;
-      const se = easeOutCubic(shieldP);
-      sm.opacity = se * 0.4 * (1 - returnP);
-      shield.scale.setScalar(0.5 + se * 0.5);
-      shield.rotation.y += 0.005;
-    } else {
-      shield.visible = false;
-    }
-  }
+  // Shield sphere removed — it rendered as a messy wireframe web.
+  if (shield) shield.visible = false;
 
   const labels: LabelSpec[] = [];
   if (separateP > 0.5) {
     labels.push(
-      { id: 'az-data-label', text: 'Data codewords', position: [0, 3.5, 0], variant: 'data' },
-      { id: 'az-ec-label', text: 'Error correction', position: [0, -0.5, 0], variant: 'ec' },
+      { id: 'az-data-label', text: `Data · ${dataBytes} words`, position: [-halfSize - 3, 1, -halfSize * 0.45], variant: 'data' },
+      { id: 'az-ec-label', text: `Error correction · ${ecBytes} words`, position: [-halfSize - 3, 1, halfSize * 0.45], variant: 'ec' },
     );
+  }
+  if (damageP > 0.3 && damageP < 0.7) {
+    labels.push({ id: 'az-damage-label', text: 'Damage detected', position: [-halfSize - 3, 1, 0], variant: 'warn' });
+  }
+  if (damageP > 0.7) {
+    labels.push({ id: 'az-repair-label', text: `Repaired — RS fixes up to ${correctable}`, position: [-halfSize - 3, 1, 0], variant: 'success' });
   }
   return labels;
 }
 
-// Stage 4: Reveal characters letter by letter.
+// Stage 4: Reveal the REAL decode symbols (each character ← the genuine code
+// bits it came from ← the data-codeword modules those bits live in).
 function renderStage4(ctx: Ctx): LabelSpec[] {
   const { modules, categorized, viz, halfSize } = ctx;
   const p = ctx.eased;
-  const text = viz.decodedText;
-  const maxChars = Math.min(text.length, 32);
+  const model = categorized.model;
+  const readOrder = categorized.dataModuleIndices;
+  const cwSize = categorized.codewordSize;
+
+  const text = model ? model.decodedText : viz.decodedText;
+  const units: { chars: string; bits: string; mods: number[] }[] = model
+    ? model.symbols.map((s) => ({
+        chars: s.chars,
+        bits: s.bits,
+        mods: s.codewords.flatMap((c) =>
+          readOrder.slice(c * cwSize, c * cwSize + cwSize),
+        ),
+      }))
+    : Array.from({ length: Math.min(viz.decodedText.length, 32) }, (_, i) => ({
+        chars: viz.decodedText[i] ?? '',
+        bits: '',
+        mods: readOrder.slice(i * 8, i * 8 + 8),
+      }));
+  const maxUnits = Math.min(units.length, 32);
 
   const revealP = Math.min(1, p / 0.7);
-  const charsRevealed = Math.floor(revealP * (maxChars + 0.999));
+  const unitProgress = revealP * maxUnits;
+  const currentIdx = Math.min(Math.floor(unitProgress), maxUnits - 1);
+  const cp = Math.max(0, Math.min(1, unitProgress - currentIdx));
   const finalP = Math.max(0, Math.min(1, (p - 0.8) / 0.2));
 
   for (const m of modules) {
     m._y = 0;
-    m._r *= 0.3; m._g *= 0.3; m._b *= 0.3;
+    m._r *= 0.22; m._g *= 0.22; m._b *= 0.22;
   }
 
-  const currentCharIdx = Math.min(charsRevealed, maxChars) - 1;
   const labels: LabelSpec[] = [];
+  let revealedChars = 0;
 
-  for (let i = 0; i < Math.min(charsRevealed, maxChars); i++) {
-    const char = text[i];
-    const isCurrent = i === currentCharIdx && revealP < 1;
+  for (let i = 0; i <= currentIdx; i++) {
+    const u = units[i];
+    if (!u) break;
+    const isCurrent = i === currentIdx && revealP < 1;
+    if (!isCurrent || cp > 0.5) revealedChars += u.chars.length;
     const cc = isCurrent ? AZ_ACCENT : CREAM_RGB;
     const pulse = isCurrent ? 0.8 + 0.2 * Math.sin(performance.now() * 0.008) : 1.0;
 
-    const startBit = i * 8;
     let cx = 0, cz = 0, count = 0;
-    for (let b = 0; b < 8; b++) {
-      const moduleIdx = startBit + b;
-      if (moduleIdx < categorized.dataModuleIndices.length) {
-        const idx = categorized.dataModuleIndices[moduleIdx];
-        const m = modules[idx];
-        m._r = cc.r * pulse;
-        m._g = cc.g * pulse;
-        m._b = cc.b * pulse;
-        m._y = isCurrent ? 1.2 : 0.5;
-        cx += m.col - halfSize + 0.5;
-        cz += m.row - halfSize + 0.5;
-        count++;
-      }
+    for (let b = 0; b < u.mods.length; b++) {
+      const m = modules[u.mods[b]];
+      m._r = cc.r * pulse;
+      m._g = cc.g * pulse;
+      m._b = cc.b * pulse;
+      m._y = isCurrent ? 1.2 : 0.5;
+      cx += m.col - halfSize + 0.5;
+      cz += m.row - halfSize + 0.5;
+      count++;
     }
 
     if (isCurrent && count > 0) {
       labels.push({
         id: 'current-char',
-        text: `"${char}"`,
+        text: `"${u.chars}"`,
         position: [cx / count, 3.0, cz / count],
         variant: 'char',
       });
     }
   }
 
-  if (charsRevealed > 0) {
+  // Keep the bullseye at full black/white contrast so its rings stay
+  // recognizable (not flattened to grey blobs) during decode.
+  for (const m of modules) {
+    if (m.cat === AztecCat.Bullseye) {
+      if (m.val) {
+        m._r = 0.04; m._g = 0.04; m._b = 0.05;
+      } else {
+        m._r = 0.85; m._g = 0.86; m._b = 0.9;
+      }
+    }
+  }
+
+  if (revealP >= 1) revealedChars = text.length;
+  const shown = text.substring(0, Math.min(revealedChars, text.length));
+  if (shown.length > 0 || finalP > 0) {
     labels.push({
       id: 'decoded-progress',
-      text:
-        finalP > 0
-          ? `"${text}"`
-          : text.substring(0, Math.min(charsRevealed, maxChars)),
+      text: finalP > 0 ? `"${text}"` : shown,
       position: finalP > 0 ? [0, 5, 0] : [0, 4.5, 0],
       variant: 'decoded',
     });
-  }
-
-  // Keep bullseye subtly visible.
-  for (const m of modules) {
-    if (m.cat === AztecCat.Bullseye && m.val) {
-      m._r = Math.max(m._r, 0.25);
-      m._g = Math.max(m._g, 0.25);
-      m._b = Math.max(m._b, 0.28);
-    }
   }
 
   if (finalP > 0) {

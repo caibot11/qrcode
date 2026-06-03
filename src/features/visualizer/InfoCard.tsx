@@ -9,7 +9,7 @@ import { DEMO_BARCODE } from '@/lib/codes/barcode/demo';
 import styles from './InfoCard.module.css';
 
 export function InfoCard() {
-  const { t, locale } = useT();
+  const { t } = useT();
   const stage = useAppStore((s) => s.stage);
   const codeType = useAppStore((s) => s.codeType);
   const lastViz = useScanStore((s) => s.lastVizData);
@@ -36,12 +36,13 @@ export function InfoCard() {
   const factKey = `fact.${codeType}.${stage}`;
   const fact = t(factKey);
   const hasFact = fact !== factKey;
-  void locale; // already wired through useT
 
   return (
     <aside className={styles.card} aria-live="polite">
       <div className={styles.stageBadge}>
-        Step&nbsp;{stage + 1}&nbsp;of&nbsp;{stages.length}
+        {t('infoCard.stepOf')
+          .replace('{n}', String(stage + 1))
+          .replace('{m}', String(stages.length))}
       </div>
 
       <h2 className={styles.title}>{t(cur.titleKey)}</h2>
